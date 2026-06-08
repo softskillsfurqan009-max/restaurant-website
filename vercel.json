@@ -1,7 +1,9 @@
 {
+  "buildCommand": "pip install -r requirements.txt",
+  "installCommand": "pip install -r requirements.txt",
   "functions": {
     "api/index.py": {
-      "runtime": "vercel-python@0.1.0"
+      "runtime": "python3.9"
     }
   },
   "routes": [
@@ -20,6 +22,10 @@
     {
       "src": "/api/(.*)",
       "dest": "/api/index.py"
+    },
+    {
+      "src": "/static/(.*)",
+      "dest": "/static/$1"
     },
     {
       "src": "/(.*)\\.html",

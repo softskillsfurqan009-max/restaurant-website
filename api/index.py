@@ -1,112 +1,146 @@
-from flask import Flask, request, jsonify, render_template, session, redirect, url_for, send_from_directory
-from flask_cors import CORS
+from flask import Flask, request, jsonify, session, redirect, url_for, send_from_directory
 import json
 import os
-from datetime import datetime
 import hashlib
 
-app = Flask(__name__, 
-           template_folder='../templates',
-           static_folder='../static')
-app.secret_key = 'krunchelite-secret-key-2024'
+app = Flask(__name__, template_folder='../templates')
+app.secret_key = 'your-secret-key-here'
 app.config['SESSION_TYPE'] = 'filesystem'
-CORS(app)
 
-# File-based storage (Vercel's /tmp directory works)
 DATA_FILE = '/tmp/data.json'
 
 def load_data():
     if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, 'r', encoding='utf-8') as f:
+        with open(DATA_FILE, 'r') as f:
             return json.load(f)
     return {
-        'menu_items': [],
-        'reservations': [],
-        'deliveries': [],
-        'orders': [],
-        'admin_users': [{'username': 'admin', 'password_hash': hashlib.sha256('admin123'.encode()).hexdigest()}],
-        'next_ids': {'menu': 1, 'reservation': 1, 'delivery': 1, 'order': 1}
+        'admin_users': [{'username': 'admin', 'password': hashlib.sha256('admin123'.encode()).hexdigest()}],
+        'menu_items': []
     }
 
-def save_data(data):
-    with open(DATA_FILE, 'w', encoding='utf-8') as f:
-        json.dump(data, f, indent=2, default=str, ensure_ascii=False)
-
-def check_password(password, stored_hash):
-    return hashlib.sha256(password.encode()).hexdigest() == stored_hash
-
-def check_admin_login():
-    return session.get('admin_logged_in', False)
-
-# ============= STATIC FILES =============
 @app.route('/')
-def index():
-    return send_from_directory('.', 'index.html')
-
-@app.route('/<path:filename>.html')
-def serve_html(filename):
-    return send_from_directory('.', f'{filename}.html')
+def home():
+    return send_from_directory('..', 'index.html')
 
 @app.route('/<path:filename>')
-def serve_static(filename):
-    return send_from_directory('.', filename)
+def serve_file(filename):
+    return send_from_directory('..', filename)
 
-# ============= ADMIN AUTH =============
 @app.route('/admin-login', methods=['GET', 'POST'])
 def admin_login():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
+        hashed = hashlib.sha256(password.encode()).hexdigest()
         
         data = load_data()
         for admin in data['admin_users']:
-            if admin['username'] == username and check_password(password, admin['password_hash']):
-                session['admin_logged_in'] = True
-                session['admin_username'] = username
-                return redirect('/admin/dashboard')
-        
-        return render_template('admin_login.html', error='Invalid credentials')
+            if admin['username'] == username and admin['password'] == hashed:
+                session['logged_in'] = True
+                return redirect('/admin-dashboard.html')
+        return '<h3>Invalid Credentials</h3><a href="/admin-login">Try Again</a>'
     
-    return render_template('admin_login.html')
+    # Return simple HTML login form
+    return '''
+    <!DOCTYPE html>
+    <html>
+    <head><title>Admin Login</title><style>
+        body{background:#0a0a0a;font-family:Arial;display:flex;justify-content:center;align-items:center;height:100vh;}
+        .login{background:#1a1a1a;padding:40px;border-radius:20px;border:1px solid #D4AF37;text-align:center;}
+        input{display:block;width:100%;padding:12px;margin:10px 0;background:#0a0a0a;border:1px solid #D4AF37;border-radius:25px;color:white;}
+        button{background:#D4AF37;color:#000;padding:12px 30px;border:none;border-radius:25px;cursor:pointer;font-weight:bold;}
+        h2{color:#D4AF37;}
+    </style></head>
+    <body>
+    <div class="login">
+        <h2>KRUNCH ELITE Admin</h2>
+        <form method="POST">
+            <input type="text" name="username" placeholder="Username" required>
+            <input type="password" name="password" placeholder="Password" required>
+            <button type="submit">Login</button>
+        </form>
+    </div>
+    </body>
+    </html>
+    '''
 
-@app.route('/admin/dashboard')
+@app.route('/admin-dashboard.html')
 def admin_dashboard():
-    if not check_admin_login():
+    if not session.get('logged_in'):
         return redirect('/admin-login')
-    return render_template('admin_dashboard.html')
+    return '''
+    <!DOCTYPE html>
+    <html>
+    <head><title>Admin Dashboard</title><style>
+        body{background:#0a0a0a;font-family:Arial;color:white;padding:20px;}
+        .header{background:#D4AF37;color:#000;padding:15px;border-radius:10px;margin-bottom:20px;}
+        button{background:#D4AF37;color:#000;padding:10px 20px;border:none;border-radius:20px;cursor:pointer;margin:5px;}
+        table{width:100%;border-collapse:collapse;margin-top:20px;}
+        th,td{padding:12px;text-align:left;border-bottom:1px solid #333;}
+        th{color:#D4AF37;}
+    </style></head>
+    <body>
+    <div class="header">
+        <h2>KRUNCH ELITE - Admin Dashboard</h2>
+        <p>Welcome Admin! <a href="/admin-logout">Logout</a></p>
+    </div>
+    <div>
+        <h3>Menu Management</h3>
+        <button onclick="addItem()">Add Menu Item</button>
+        <div id="menuList"></div>
+    </div>
+    <script>
+        fetch('/api/menu').then(r=>r.json()).then(data=>{
+            let html='<table><tr><th>ID</th><th>Name</th><th>Price</th><th>Action</th></tr>';
+            data.forEach(item=>{
+                html+=`<tr><td>${item.id}</td><td>${item.name}</td><td>$${item.price}</td><td><button onclick="deleteItem(${item.id})">Delete</button></td></tr>`;
+            });
+            html+='</table>';
+            document.getElementById('menuList').innerHTML=html;
+        });
+        function deleteItem(id){
+            fetch('/api/menu/'+id,{method:'DELETE'}).then(()=>location.reload());
+        }
+        function addItem(){
+            let name=prompt('Item Name:');
+            let price=prompt('Price:');
+            if(name && price){
+                fetch('/api/menu',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,price:parseFloat(price)})}).then(()=>location.reload());
+            }
+        }
+    </script>
+    </body>
+    </html>
+    '''
 
 @app.route('/admin-logout')
 def admin_logout():
     session.clear()
     return redirect('/admin-login')
 
-# ============= API ROUTES =============
 @app.route('/api/menu', methods=['GET'])
 def get_menu():
-    return jsonify(load_data()['menu_items'])
+    return jsonify(load_data().get('menu_items', []))
 
-@app.route('/api/reservations', methods=['GET'])
-def get_reservations():
-    return jsonify(load_data()['reservations'])
-
-@app.route('/api/deliveries', methods=['GET'])
-def get_deliveries():
-    return jsonify(load_data()['deliveries'])
-
-@app.route('/api/orders', methods=['GET'])
-def get_orders():
-    return jsonify(load_data()['orders'])
-
-@app.route('/api/stats', methods=['GET'])
-def get_stats():
+@app.route('/api/menu', methods=['POST'])
+def add_menu():
     data = load_data()
-    return jsonify({
-        'total_menu_items': len(data['menu_items']),
-        'total_reservations': len(data['reservations']),
-        'total_deliveries': len(data['deliveries']),
-        'total_orders': len(data['orders']),
-        'total_revenue': 0
-    })
+    new_item = request.json
+    new_item['id'] = len(data.get('menu_items', [])) + 1
+    if 'menu_items' not in data:
+        data['menu_items'] = []
+    data['menu_items'].append(new_item)
+    with open(DATA_FILE, 'w') as f:
+        json.dump(data, f)
+    return jsonify(new_item)
 
-# Vercel requires this
+@app.route('/api/menu/<int:item_id>', methods=['DELETE'])
+def delete_menu(item_id):
+    data = load_data()
+    data['menu_items'] = [i for i in data.get('menu_items', []) if i.get('id') != item_id]
+    with open(DATA_FILE, 'w') as f:
+        json.dump(data, f)
+    return jsonify({'success': True})
+
+# This is for Vercel
 app = app

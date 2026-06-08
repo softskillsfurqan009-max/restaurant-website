@@ -1,15 +1,9 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "api/index.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "*.html",
-      "use": "@vercel/static"
+  "functions": {
+    "api/index.py": {
+      "runtime": "python3.9"
     }
-  ],
+  },
   "routes": [
     {
       "src": "/admin-login",
@@ -26,10 +20,6 @@
     {
       "src": "/api/(.*)",
       "dest": "/api/index.py"
-    },
-    {
-      "src": "/(.*\\.html)",
-      "dest": "/$1"
     },
     {
       "src": "/(.*)",

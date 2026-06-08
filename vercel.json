@@ -1,30 +1,10 @@
 {
   "functions": {
     "api/index.py": {
-      "runtime": "python@3.9"
+      "runtime": "vercel-python@0.1.0"
     }
   },
   "routes": [
-    {
-      "src": "/admin-login",
-      "dest": "/api/index.py"
-    },
-    {
-      "src": "/admin/dashboard",
-      "dest": "/api/index.py"
-    },
-    {
-      "src": "/admin-logout",
-      "dest": "/api/index.py"
-    },
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/index.py"
-    },
-    {
-      "src": "/(.*\\.html)",
-      "dest": "/$1"
-    },
     {
       "src": "/(.*)",
       "dest": "/api/index.py"

@@ -1,0 +1,71 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - KRUNCH ELITE</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0A0A0A; color: white; }
+        .sidebar { position: fixed; left: 0; top: 0; width: 260px; height: 100%; background: #0F0F0F; border-right: 1px solid #D4AF37; padding: 2rem 1rem; overflow-y: auto; }
+        .sidebar .logo-icon { width: 60px; height: 60px; background: #D4AF37; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin: 0 auto 1rem; color: #050505; font-weight: bold; }
+        .sidebar nav a { display: flex; align-items: center; gap: 12px; padding: 12px 20px; color: #B0B0B0; text-decoration: none; border-radius: 12px; margin-bottom: 8px; }
+        .sidebar nav a:hover, .sidebar nav a.active { background: rgba(212,175,55,0.1); color: #D4AF37; }
+        .main-content { margin-left: 260px; padding: 2rem; }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 2rem; }
+        .stat-card { background: rgba(20,20,20,0.9); border-radius: 24px; padding: 1.5rem; border: 1px solid #D4AF37; text-align: center; }
+        .stat-card i { font-size: 2rem; color: #D4AF37; }
+        .stat-card .number { font-size: 2rem; font-weight: 800; }
+        .section { background: rgba(20,20,20,0.8); border-radius: 28px; padding: 1.5rem; border: 1px solid #D4AF37; overflow-x: auto; }
+        .section h2 { color: #D4AF37; margin-bottom: 1rem; }
+        table { width: 100%; border-collapse: collapse; min-width: 500px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid rgba(212,175,55,0.2); }
+        th { color: #D4AF37; }
+        button { background: #D4AF37; color: #050505; border: none; padding: 6px 15px; border-radius: 20px; cursor: pointer; margin: 0 3px; }
+        .btn-add { background: #D4AF37; padding: 10px 20px; border-radius: 30px; margin-bottom: 1rem; cursor: pointer; font-weight: bold; border: none; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: #1A1A1A; border-radius: 28px; padding: 2rem; width: 90%; max-width: 500px; border: 2px solid #D4AF37; }
+        .modal-content input, .modal-content select { width: 100%; padding: 12px; margin: 10px 0; background: #0A0A0A; border: 1px solid #D4AF37; border-radius: 20px; color: white; }
+        @media (max-width: 768px) { .sidebar { width: 70px; } .sidebar span { display: none; } .main-content { margin-left: 70px; } .stats-grid { grid-template-columns: repeat(2,1fr); } }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="logo-icon">K</div>
+        <nav>
+            <a href="#" class="active" data-tab="dashboard"><i class="fas fa-chart-line"></i> <span>Dashboard</span></a>
+            <a href="#" data-tab="menu"><i class="fas fa-utensils"></i> <span>Menu</span></a>
+            <a href="#" data-tab="reservations"><i class="fas fa-calendar-check"></i> <span>Reservations</span></a>
+            <a href="#" data-tab="deliveries"><i class="fas fa-truck"></i> <span>Deliveries</span></a>
+            <a href="#" data-tab="orders"><i class="fas fa-shopping-cart"></i> <span>Orders</span></a>
+            <a href="/admin-logout"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a>
+        </nav>
+    </div>
+    <div class="main-content" id="mainContent"></div>
+    <div id="menuModal" class="modal"><div class="modal-content"><h3 style="color:#D4AF37;">Add Menu Item</h3>
+        <input type="text" id="itemName" placeholder="Item Name">
+        <select id="itemCategory"><option>Burgers</option><option>Pizza</option><option>Crispy Chicken</option><option>Fries & Sides</option><option>Shawarma & Wraps</option><option>Drinks</option><option>Desserts</option></select>
+        <input type="number" id="itemPrice" placeholder="Price">
+        <input type="text" id="itemDesc" placeholder="Description">
+        <input type="text" id="itemImage" placeholder="Image URL">
+        <button onclick="addMenuItem()">Add</button><button onclick="closeModal('menuModal')">Cancel</button>
+    </div></div>
+    <script>
+        function loadDashboard(){fetch('/api/stats').then(r=>r.json()).then(d=>{document.getElementById('mainContent').innerHTML='<div class="stats-grid"><div class="stat-card"><i class="fas fa-hamburger"></i><div class="number">'+d.total_menu_items+'</div><div>Menu Items</div></div><div class="stat-card"><i class="fas fa-calendar"></i><div class="number">'+d.total_reservations+'</div><div>Reservations</div></div><div class="stat-card"><i class="fas fa-truck"></i><div class="number">'+d.total_deliveries+'</div><div>Deliveries</div></div><div class="stat-card"><i class="fas fa-shopping-cart"></i><div class="number">'+d.total_orders+'</div><div>Orders</div></div><div class="stat-card"><i class="fas fa-dollar-sign"></i><div class="number">$'+d.total_revenue+'</div><div>Revenue</div></div></div><div class="section"><h2>Dashboard Overview</h2><p>Welcome to KRUNCH ELITE Admin Panel</p></div>'})}
+        function loadMenu(){fetch('/api/menu').then(r=>r.json()).then(i=>{let h='<div style="margin-bottom:1rem;"><button class="btn-add" onclick="openModal(\'menuModal\')"><i class="fas fa-plus"></i> Add Menu Item</button></div><div class="section"><h2>Menu Items</h2><table><thead><tr><th>Image</th><th>Name</th><th>Category</th><th>Price</th><th>Action</th></tr></thead><tbody>';i.forEach(item=>{h+='<tr><td><img src="'+item.image_url+'" width="40" style="border-radius:10px"></td><td>'+item.name+'</td><td>'+item.category+'</td><td>$'+item.price+'</td><td><button onclick="deleteItem('+item.id+')">Delete</button></td></tr>'});h+='</tbody></table></div>';document.getElementById('mainContent').innerHTML=h})}
+        function loadReservations(){fetch('/api/reservations').then(r=>r.json()).then(i=>{let h='<div class="section"><h2>Reservations</h2><table><thead><tr><th>Name</th><th>Date</th><th>Time</th><th>Guests</th><th>Status</th><th>Action</th></tr></thead><tbody>';if(i.length===0){h+='<tr><td colspan="6" style="text-align:center">No reservations yet</td></tr>'}else{i.forEach(item=>{h+='<tr><td>'+item.customer_name+'</td><td>'+item.reservation_date+'</td><td>'+item.reservation_time+'</td><td>'+item.guests+'</td><td>'+item.status+'</td><td><button onclick="updateStatus(\'reservations\','+item.id+',\'confirmed\')">Confirm</button><button onclick="updateStatus(\'reservations\','+item.id+',\'cancelled\')">Cancel</button></td></tr>'})}h+='</tbody></table></div>';document.getElementById('mainContent').innerHTML=h})}
+        function loadDeliveries(){fetch('/api/deliveries').then(r=>r.json()).then(i=>{let h='<div class="section"><h2>Deliveries</h2><table><thead><tr><th>Name</th><th>Phone</th><th>Address</th><th>City</th><th>Status</th><th>Action</th></tr></thead><tbody>';if(i.length===0){h+='<tr><td colspan="6" style="text-align:center">No deliveries</td></tr>'}else{i.forEach(item=>{h+='<tr><td>'+item.full_name+'</td><td>'+item.phone+'</td><td>'+(item.address||'').substring(0,30)+'...</td><td>'+item.city+'</td><td>'+item.status+'</td><td><button onclick="updateDeliveryStatus('+item.id+',\'inactive\')">Deactivate</button></td></tr>'})}h+='</tbody></table></div>';document.getElementById('mainContent').innerHTML=h})}
+        function loadOrders(){fetch('/api/orders').then(r=>r.json()).then(i=>{let h='<div class="section"><h2>Orders</h2><table><thead><tr><th>Customer</th><th>Items</th><th>Total</th><th>Status</th><th>Action</th><tr></thead><tbody>';if(i.length===0){h+='<tr><td colspan="5" style="text-align:center">No orders yet</td></tr>'}else{i.forEach(item=>{h+='<td>'+item.customer_name+'</td><td>'+(item.items||'').substring(0,30)+'...</td><td>$'+item.total_amount+'</td><td>'+item.status+'</td><td><button onclick="updateOrderStatus('+item.id+',\'completed\')">Complete</button><button onclick="updateOrderStatus('+item.id+',\'cancelled\')">Cancel</button></td></tr>'})}h+='</tbody></table></div>';document.getElementById('mainContent').innerHTML=h})}
+        function addMenuItem(){let item={name:document.getElementById('itemName').value,category:document.getElementById('itemCategory').value,price:parseFloat(document.getElementById('itemPrice').value),description:document.getElementById('itemDesc').value,image_url:document.getElementById('itemImage').value,calories:'',prep_time:'',spicy_level:'',is_bestseller:false};fetch('/api/menu',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(item)}).then(()=>{closeModal('menuModal');loadMenu()})}
+        function deleteItem(id){if(confirm('Delete this item?')){fetch('/api/menu/'+id,{method:'DELETE'}).then(()=>loadMenu())}}
+        function updateStatus(type,id,status){fetch('/api/'+type+'/'+id+'/status',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:status})}).then(()=>loadReservations())}
+        function updateDeliveryStatus(id,status){fetch('/api/deliveries/'+id+'/status',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:status})}).then(()=>loadDeliveries())}
+        function updateOrderStatus(id,status){fetch('/api/orders/'+id+'/status',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:status})}).then(()=>loadOrders())}
+        function openModal(id){document.getElementById(id).style.display='flex'}
+        function closeModal(id){document.getElementById(id).style.display='none'}
+        document.querySelectorAll('.sidebar nav a').forEach(link=>{link.onclick=(e)=>{e.preventDefault();document.querySelectorAll('.sidebar nav a').forEach(l=>l.classList.remove('active'));link.classList.add('active');let tab=link.dataset.tab;if(tab=='dashboard')loadDashboard();else if(tab=='menu')loadMenu();else if(tab=='reservations')loadReservations();else if(tab=='deliveries')loadDeliveries();else if(tab=='orders')loadOrders()}})
+        loadDashboard();
+    </script>
+</body>
+</html>

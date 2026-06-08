@@ -1,0 +1,84 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - KRUNCH ELITE</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #050505, #1a1a1a);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .login-container {
+            background: rgba(20,20,20,0.95);
+            padding: 3rem;
+            border-radius: 40px;
+            border: 2px solid #D4AF37;
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+        }
+        .logo-icon {
+            width: 80px;
+            height: 80px;
+            background: #D4AF37;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #050505;
+            margin: 0 auto 1.5rem;
+        }
+        h2 { color: #D4AF37; margin-bottom: 0.5rem; }
+        .input-group { margin-bottom: 1.5rem; text-align: left; }
+        .input-group input {
+            width: 100%;
+            padding: 15px 20px;
+            background: rgba(10,10,10,0.95);
+            border: 1px solid #D4AF37;
+            border-radius: 30px;
+            color: white;
+            font-size: 1rem;
+        }
+        button {
+            width: 100%;
+            background: #D4AF37;
+            color: #050505;
+            padding: 14px;
+            border: none;
+            border-radius: 30px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        button:hover { transform: translateY(-2px); }
+        .error { color: #ff4444; margin-top: 1rem; }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo-icon">K</div>
+        <h2>Admin Login</h2>
+        <p style="color: #B0B0B0; margin-bottom: 2rem;">KRUNCH ELITE Dashboard</p>
+        <form method="POST">
+            <div class="input-group">
+                <input type="text" name="username" placeholder="Username" required>
+            </div>
+            <div class="input-group">
+                <input type="password" name="password" placeholder="Password" required>
+            </div>
+            <button type="submit">Login to Dashboard</button>
+            {% if error %}
+                <p class="error">{{ error }}</p>
+            {% endif %}
+        </form>
+    </div>
+</body>
+</html>

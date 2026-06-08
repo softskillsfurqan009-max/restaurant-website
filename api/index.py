@@ -12,7 +12,7 @@ app.secret_key = 'krunchelite-secret-key-2024'
 app.config['SESSION_TYPE'] = 'filesystem'
 CORS(app)
 
-# File-based storage
+# File-based storage (Vercel's /tmp directory works)
 DATA_FILE = '/tmp/data.json'
 
 def load_data():
@@ -38,14 +38,20 @@ def check_password(password, stored_hash):
 def check_admin_login():
     return session.get('admin_logged_in', False)
 
+# ============= STATIC FILES =============
 @app.route('/')
 def index():
     return send_from_directory('.', 'index.html')
+
+@app.route('/<path:filename>.html')
+def serve_html(filename):
+    return send_from_directory('.', f'{filename}.html')
 
 @app.route('/<path:filename>')
 def serve_static(filename):
     return send_from_directory('.', filename)
 
+# ============= ADMIN AUTH =============
 @app.route('/admin-login', methods=['GET', 'POST'])
 def admin_login():
     if request.method == 'POST':
@@ -74,6 +80,7 @@ def admin_logout():
     session.clear()
     return redirect('/admin-login')
 
+# ============= API ROUTES =============
 @app.route('/api/menu', methods=['GET'])
 def get_menu():
     return jsonify(load_data()['menu_items'])
@@ -101,5 +108,5 @@ def get_stats():
         'total_revenue': 0
     })
 
-# This is for Vercel
-handler = app
+# Vercel requires this
+app = app
